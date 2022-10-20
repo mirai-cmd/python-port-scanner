@@ -10,6 +10,10 @@ from datetime import datetime
 from time import perf_counter
 from queue import Queue
 
+# Queue keeps track of ports,
+# openPorts maintains a list of open ports,
+# thread_list keeps track of threads in execution
+
 # Initialise an argument parser and add positional and optional arguements
 
 parser = argparse.ArgumentParser(description="Scan for open ports on any host machine")
@@ -24,6 +28,7 @@ args = parser.parse_args()
 
 
 class Scan:
+    global queue,openPorts,thread_list
     queue = Queue()
     openPorts = []
     thread_list = []
@@ -32,10 +37,10 @@ class Scan:
         print(f"\nStarting PyScan 1.0 at {str(datetime.now())}")
 
     def begin(self):
-        while not self.queue.empty():
-            port = self.queue.get()
+        while not queue.empty():
+            port = queue.get()
             if self.portscan(port):
-                self.openPorts.append(port)
+                openPorts.append(port)
     
     def discoverHost(self):
         temp = subprocess.Popen(["ping", "-c 1", args.host], stdout=subprocess.PIPE)
@@ -47,8 +52,8 @@ class Scan:
         res = []
         for line in output:
             res.append(line)
-
-        if res[4].split(",")[1] == "0 received":
+        response = res[4].split(",")[1] 
+        if response[1:] == "0 received":
             return True
         else:
             return False
@@ -64,7 +69,7 @@ class Scan:
     
     def enq(self,port_list):
         for port in port_list:
-            self.queue.put(port)
+            queue.put(port)
     
     
     def printResult(self):
@@ -72,11 +77,11 @@ class Scan:
         print("Host is up")
         print("\nPORT\tSTATE")
         print("____\t_____")
-        for port in self.openPorts:
+        for port in openPorts:
             print(str(port) + "\t" + "open")
         print(
             "\n"
-            + str(len(self.openPorts))
+            + str(len(openPorts))
             + " ports open, finished in {} second(s)".format(str(exec_time))
         )
 
@@ -108,12 +113,12 @@ if __name__ == "__main__":
     try:
         for t in range(200):
             thread = threading.Thread(target=scan.begin)
-            scan.thread_list.append(thread)
+            thread_list.append(thread)
 
-        for thread in scan.thread_list:
+        for thread in thread_list:
             thread.start()
 
-        for thread in scan.thread_list:
+        for thread in thread_list:
             thread.join()
     except:
         print("Exception occurred during multi-threading, aborting.....")
@@ -127,4 +132,4 @@ if __name__ == "__main__":
         scan.printResult()
 
     else:
-        print("Open ports: " + str(scan.openPorts))
+        print("Open ports: " + str(openPorts))
