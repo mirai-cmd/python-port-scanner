@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-#Problem With Windows, ping -c option requires admin priviledges
 
 import subprocess
 import socket
