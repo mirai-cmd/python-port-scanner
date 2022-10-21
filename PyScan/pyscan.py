@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 
+#Problem With Windows, ping -c option requires admin priviledges
+
 import subprocess
 import socket
 import threading
@@ -21,14 +23,13 @@ parser.add_argument(
     "-v", "--verbose", help="Increase Verbosity of output", action="store_true"
 )
 parser.add_argument(
-    "port_number", help="Specify the port range you would like to scan", type=str
+    "-p","port_number", help="Specify the port range you would like to scan", default="1-100", type=str
 )
 parser.add_argument("host", help="IP address of target host", type=str)
 args = parser.parse_args()
 
 
 class Scan:
-    global queue,openPorts,thread_list
     queue = Queue()
     openPorts = []
     thread_list = []
@@ -37,10 +38,10 @@ class Scan:
         print(f"\nStarting PyScan 1.0 at {str(datetime.now())}")
 
     def begin(self):
-        while not queue.empty():
-            port = queue.get()
+        while not self.queue.empty():
+            port = self.queue.get()
             if self.portscan(port):
-                openPorts.append(port)
+                self.openPorts.append(port)
     
     def discoverHost(self):
         temp = subprocess.Popen(["ping", "-c 1", args.host], stdout=subprocess.PIPE)
@@ -69,21 +70,17 @@ class Scan:
     
     def enq(self,port_list):
         for port in port_list:
-            queue.put(port)
+            self.queue.put(port)
     
     
     def printResult(self):
-        print("PyScan Report for {}\n".format(args.host))
+        print(f"PyScan Report for {args.host}\n")
         print("Host is up")
         print("\nPORT\tSTATE")
         print("____\t_____")
         for port in openPorts:
             print(str(port) + "\t" + "open")
-        print(
-            "\n"
-            + str(len(openPorts))
-            + " ports open, finished in {} second(s)".format(str(exec_time))
-        )
+        print( f"\nstr(len(openPorts)) ports open, finished in {exec_time} second(s)")
 
 start = perf_counter()
 
@@ -113,12 +110,12 @@ if __name__ == "__main__":
     try:
         for t in range(200):
             thread = threading.Thread(target=scan.begin)
-            thread_list.append(thread)
+            scan.thread_list.append(thread)
 
-        for thread in thread_list:
+        for thread in scan.thread_list:
             thread.start()
 
-        for thread in thread_list:
+        for thread in scan.thread_list:
             thread.join()
     except:
         print("Exception occurred during multi-threading, aborting.....")
@@ -132,4 +129,4 @@ if __name__ == "__main__":
         scan.printResult()
 
     else:
-        print("Open ports: " + str(openPorts))
+        print("Open ports: " + str(scan.openPorts))
