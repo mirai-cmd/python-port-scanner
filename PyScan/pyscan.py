@@ -23,7 +23,7 @@ parser.add_argument(
     "-v", "--verbose", help="Increase Verbosity of output", action="store_true"
 )
 parser.add_argument(
-    "-p","port_number", help="Specify the port range you would like to scan", default="1-100", type=str
+    "-p","--port_number", help="Specify the port range you would like to scan", default="1-100", type=str
 )
 parser.add_argument("host", help="IP address of target host", type=str)
 args = parser.parse_args()
@@ -78,9 +78,9 @@ class Scan:
         print("Host is up")
         print("\nPORT\tSTATE")
         print("____\t_____")
-        for port in openPorts:
-            print(str(port) + "\t" + "open")
-        print( f"\nstr(len(openPorts)) ports open, finished in {exec_time} second(s)")
+        for port in self.openPorts:
+            print(f"{port}\topen")
+        print( f"\n{len(self.openPorts)} ports open, finished in {exec_time} second(s)")
 
 start = perf_counter()
 
