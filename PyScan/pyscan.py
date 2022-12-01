@@ -22,6 +22,7 @@ parser = argparse.ArgumentParser(description="Scan for open ports on any host ma
 parser.add_argument(
     "-v", "--verbose", help="Increase Verbosity of output", action="store_true"
 )
+parser.add_argument("-sD","--skip",help="Skip host discovery and initiate port scanning",action="store_true")
 parser.add_argument(
     "-p","--port_number", help="Specify the port range you would like to scan", default="1-100", type=str
 )
@@ -29,7 +30,7 @@ parser.add_argument("host", help="IP address of target host", type=str)
 args = parser.parse_args()
 
 
-class Scan:
+class PyScan:
     queue = Queue()
     openPorts = []
     thread_list = []
@@ -48,20 +49,19 @@ class Scan:
         output = str(temp.communicate())
         output = output.split("\n")
         output = output[0].split("\\")
-
         # a variable to store the output
         res = []
         for line in output:
             res.append(line)
-        response = res[4].split(",")[1] 
+        response = res[4].split(",")[1]
         if response[1:] == "0 received":
-            return True
-        else:
-            return False
+            sys.exit("Host seems to be down, could not scan\nExiting PyScan.....")
+        return True
     
     def portscan(self,port):
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(5.0)   
             s.connect((args.host, port))
             return True
 
@@ -73,9 +73,12 @@ class Scan:
             self.queue.put(port)
     
     
-    def printResult(self):
+    def printResult(self,hostStatus):
+        
+        status="up" if hostStatus == True else "down"
+
         print(f"PyScan Report for {args.host}\n")
-        print("Host is up")
+        print(f"Host is {status}")
         print("\nPORT\tSTATE")
         print("____\t_____")
         for port in self.openPorts:
@@ -86,7 +89,9 @@ start = perf_counter()
 
 if __name__ == "__main__":
     
-    scan = Scan()
+    scan = PyScan()
+    
+    hostStatus = False
     
     if int(args.port_number.split("-")[1]) < 65535:
 
@@ -102,9 +107,8 @@ if __name__ == "__main__":
         exec_time = round(end - start, 2)
         sys.exit(f"\nInvalid Port Range!!\nFinished in {exec_time} second(s)")
 
-    if scan.discoverHost():
-        sys.exit("Host seems to be down, could not scan\nExiting PyScan.....")
-
+    if args.skip != True:
+        hostStatus = scan.discoverHost()
 
     # Create threads and call worker method to begin execution
     try:
@@ -125,8 +129,7 @@ if __name__ == "__main__":
     
     exec_time = round(end - start, 2)
 
-    if args.verbose:
-        scan.printResult()
-
+    if args.verbose == True:
+        scan.printResult(hostStatus)
     else:
         print("Open ports: " + str(scan.openPorts))
