@@ -1,4 +1,3 @@
-
 import subprocess
 
 import socket
@@ -9,12 +8,15 @@ import argparse
 
 import sys
 
+from pyfiglet import figlet_format
+
+from termcolor import colored
+
 from datetime import datetime
 
 from time import perf_counter
 
 from queue import Queue
-
 
 # Queue keeps track of ports,
 
@@ -42,7 +44,7 @@ parser.add_argument(
 parser.add_argument(
     "-p",
     "--port",
-    help="Scan  specific port(s) you would like to scan. For multiple ports use a comma separated list",
+    help="Scan  specific port(s) you would like to scan.",
     type=int,
 )
 
@@ -68,8 +70,25 @@ class PyScan:
     thread_list = []
 
     def __init__(self):
-
+        fancyText = figlet_format("PyScan")
+        details = {
+            "welcome": colored("Welcome", color="blue"),
+            "github": colored("https://github.com/mirai-cmd", color="red"),
+            "developer": colored("Prajwal Ghotage", color="light_blue"),
+        }
         print(f"\nStarting PyScan 1.0 at {str(datetime.now())}")
+        print(colored(fancyText, color="light_green"))
+        print(
+            "|"
+            + "-" * 30
+            + "["
+            + details["welcome"]
+            + "]"+"-"*30+"|"
+        )
+        print("|\t\tgithub    : " + details["github"] + "\t      |")
+        print("|\t\tdeveloper : " + details["developer"] + "\t\t\t      |")
+        print("|"+"-"*69+"|")
+        print(colored("\n\nInitiating port scanning...",color="light_cyan"))
 
     def begin(self):
 
@@ -130,7 +149,6 @@ class PyScan:
             self.queue.put(port)
 
     def printResult(self, hostStatus):
-
         status = "up" if hostStatus == True else "down"
 
         print(f"PyScan Report for {args.host}\n")
@@ -151,15 +169,14 @@ class PyScan:
 start = perf_counter()
 
 
-
 if __name__ == "__main__":
 
     scan = PyScan()
 
     hostStatus = False
 
-    checkValidPort = lambda port :  True if port > 1 and port < 65535 else False
-    
+    checkValidPort = lambda port: True if port >= 1 and port <= 65535 else False
+
     try:
         if args.port is not None and checkValidPort(args.port):
 
@@ -170,7 +187,6 @@ if __name__ == "__main__":
             port_range = args.port_number.split("-")
 
             if checkValidPort(int(port_range[0])) and checkValidPort(int(port_range[1])):
-
                 lowerBound, upperBound = abs(int(port_range[0])), abs(int(port_range[1]))
 
                 port_list = range(lowerBound, upperBound)
@@ -186,11 +202,11 @@ if __name__ == "__main__":
                 sys.exit(
                     f"\nInvalid Port(s) specified!!\nFinished in {exec_time} second(s)"
                 )
-    
+
     except ValueError as error:
         print(f"Invalid parameter type specified!!\n{error}")
         sys.exit(-1)
-    
+
     if args.skip != True:
 
         hostStatus = scan.discoverHost()
